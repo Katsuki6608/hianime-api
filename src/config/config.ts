@@ -1,6 +1,6 @@
 const config = {
-  baseurl: 'hianime.ro',
-  baseurl2: 'hianime.ro',
+  baseurl: 'https://hianime.ro',
+  baseurl2: 'https://hianime.ro',
   origin: '*',
   port: 5000,
 
