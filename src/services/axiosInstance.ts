@@ -6,19 +6,19 @@ export const axiosInstance = async (
 ) => {
   const { headers: customHeaders = {} } = options;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const targetUrl = `https://hianime.to${cleanEndpoint}`;
+  const targetUrl = `${config.baseurl}${cleanEndpoint}`;
 
-  // Dedicated worker proxy that bypasses Cloudflare datacenter IP blocks
-  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+  // Dedicated CORS/CF Bypass worker proxy
+  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 9500);
 
   try {
     const response = await fetch(proxyUrl, {
+      method: 'GET',
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        ...config.headers,
         ...customHeaders,
       },
       signal: controller.signal,
@@ -27,7 +27,15 @@ export const axiosInstance = async (
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Fallback: Direct fetch
+      const directRes = await fetch(targetUrl, {
+        headers: config.headers,
+      });
+      if (!directRes.ok) {
+        throw new Error(`HTTP ${directRes.status}: ${directRes.statusText}`);
+      }
+      const directHtml = await directRes.text();
+      return { success: true, data: directHtml };
     }
 
     const data = await response.text();
