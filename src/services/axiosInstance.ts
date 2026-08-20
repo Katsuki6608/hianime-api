@@ -7,11 +7,11 @@ export const axiosInstance = async (
   const { headers: customHeaders = {} } = options;
   const targetUrl = `${config.baseurl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
   
-  // Fast direct CORS proxy that bypasses Cloudflare challenge
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+  // High-reliability proxy that returns plain text/HTML without 403 blocks
+  const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 7000);
 
   try {
     const response = await fetch(proxyUrl, {
