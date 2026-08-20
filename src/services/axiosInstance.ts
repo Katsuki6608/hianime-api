@@ -5,27 +5,16 @@ export const axiosInstance = async (
   options: { headers?: Record<string, string> } = {}
 ) => {
   const { headers: customHeaders = {} } = options;
-  const targetUrl = `${config.baseurl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const targetUrl = `https://hianime.to/${endpoint.replace(/^\//, '')}`;
+  
+  // High-speed open proxy bridge to bypass Cloudflare
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8500);
 
   try {
-    const response = await fetch(targetUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        ...customHeaders,
-      },
+    const response = await fetch(proxyUrl, {
       signal: controller.signal,
     });
 
@@ -35,15 +24,15 @@ export const axiosInstance = async (
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.text();
+    const json = (await response.json()) as { contents?: string };
 
-    if (!data || data.length === 0) {
-      throw new Error('Empty response received');
+    if (!json.contents || json.contents.length === 0) {
+      throw new Error('Empty response received from source');
     }
 
     return {
       success: true,
-      data,
+      data: json.contents,
     };
   } catch (error: unknown) {
     clearTimeout(timeoutId);
