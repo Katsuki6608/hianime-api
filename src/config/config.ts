@@ -1,6 +1,6 @@
 const config = {
-  baseurl: 'https://hianime.ro',
-  baseurl2: 'https://hianime.ro',
+  baseurl: 'https://aniwatch.co.at',
+  baseurl2: 'https://aniwatch.co.at',
   origin: '*',
   port: 5000,
 
