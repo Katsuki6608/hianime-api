@@ -6,16 +6,19 @@ export const axiosInstance = async (
 ) => {
   const { headers: customHeaders = {} } = options;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const targetUrl = `${config.baseurl}${cleanEndpoint}`;
+  const targetUrl = `https://hianime.to${cleanEndpoint}`;
+
+  // Dedicated worker proxy that bypasses Cloudflare datacenter IP blocks
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8500);
+  const timeoutId = setTimeout(() => controller.abort(), 9500);
 
   try {
-    const response = await fetch(targetUrl, {
-      method: 'GET',
+    const response = await fetch(proxyUrl, {
       headers: {
-        ...config.headers,
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
         ...customHeaders,
       },
       signal: controller.signal,
