@@ -1,61 +1,53 @@
 import config from '../config/config';
 
-const MAX_RETRIES = 1;
-const TIMEOUT = 8000;
-
 export const axiosInstance = async (
   endpoint: string,
-  options: { headers?: Record<string, string>; retries?: number } = {}
+  options: { headers?: Record<string, string> } = {}
 ) => {
-  const { headers: customHeaders = {}, retries = MAX_RETRIES } = options;
+  const { headers: customHeaders = {} } = options;
   const targetUrl = `${config.baseurl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
-  // Free public proxy to bypass datacenter IP & Cloudflare blocks
-  const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-  let lastError: Error | null = null;
+  
+  // Fast direct CORS proxy that bypasses Cloudflare challenge
+  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          ...customHeaders,
-        },
-        signal: controller.signal,
-      });
+  try {
+    const response = await fetch(proxyUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        ...customHeaders,
+      },
+      signal: controller.signal,
+    });
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.text();
-
-      if (!data || data.length === 0) {
-        throw new Error('Empty response received');
-      }
-
-      return {
-        success: true,
-        data,
-      };
-    } catch (error: unknown) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error) {
-        lastError = error;
-        if (error.name === 'AbortError') {
-          lastError = new Error('Request timeout - the external API took too long to respond');
-        }
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  }
 
-  return {
-    success: false,
-    message: lastError?.message || 'Unknown error occurred',
-  };
+    const data = await response.text();
+
+    if (!data || data.length === 0) {
+      throw new Error('Empty response received');
+    }
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    let errorMsg = 'Unknown error occurred';
+    if (error instanceof Error) {
+      errorMsg = error.name === 'AbortError' ? 'Request timeout' : error.message;
+    }
+    return {
+      success: false,
+      message: errorMsg,
+    };
+  }
 };
