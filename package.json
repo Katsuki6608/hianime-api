@@ -1,7 +1,6 @@
 {
   "name": "hianime-v2",
   "version": "2.2.0",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ryanwtf7/hianime-api.git"
